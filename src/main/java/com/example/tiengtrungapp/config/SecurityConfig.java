@@ -17,7 +17,6 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import com.example.tiengtrungapp.security.JwtFilter;
 
 import java.util.Arrays;
-import java.util.Collections;
 
 @Configuration
 @EnableWebSecurity
@@ -29,7 +28,7 @@ public class SecurityConfig {
     
     @Bean
     public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
+    return new BCryptPasswordEncoder();
     }
     
     @Bean
@@ -45,30 +44,55 @@ public class SecurityConfig {
                 .requestMatchers("/api/baigiang/**").permitAll()
                 .requestMatchers("/api/tuvung/**").permitAll()
                 .requestMatchers("/api/translation/**").permitAll()
+                .requestMatchers("/api/chude/**").permitAll()
+                .requestMatchers("/api/capdohsk/**").permitAll()
+                .requestMatchers("/api/loaibaigiang/**").permitAll()
+                .requestMatchers("/api/tien-trinh/**").permitAll()
+                .requestMatchers("/api/media/**").permitAll()
+                .requestMatchers("/api/profile/**").permitAll()
+                .requestMatchers("/videos/**").permitAll()
+                .requestMatchers("/images/**").permitAll()
+                .requestMatchers("/swagger-ui/**").permitAll()
+                .requestMatchers("/v3/api-docs/**").permitAll()
                 
                 // Admin only endpoints - chỉ admin mới truy cập được
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
                 
-                // User profile endpoints - user đã đăng nhập mới truy cập được
-                .requestMatchers("/api/profile/**").authenticated()
-                
                 // Tất cả các endpoint khác cần authentication
                 .anyRequest().authenticated()
-            )
+                )
             .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
-        
-        return http.build();
+            
+            return http.build();
     }
     
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(Collections.singletonList("*"));
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        
+        // Cho phép tất cả origins để tránh lỗi CORS
+        configuration.setAllowedOriginPatterns(Arrays.asList("*"));
+        
+        // Hoặc nếu muốn chỉ định cụ thể:
+        // configuration.setAllowedOrigins(Arrays.asList(
+        //     "http://localhost:5173",  // Vue dev server
+        //     "http://localhost:3000",  // Alternative dev port
+        //     "http://localhost:8080",  // Backend port (for testing)
+        //     "http://localhost:8081",  // Alternative backend port
+        //     "http://localhost:4200",  // Angular dev server
+        //     "http://1.53.72.37:8080", // Your server IP
+        //     "http://1.53.72.37:*",    // Your server IP with any port
+        //     "capacitor://localhost",  // Android app (Capacitor)
+        //     "ionic://localhost"       // Ionic app
+        // ));
+        
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         configuration.setAllowedHeaders(Arrays.asList(
-            "Authorization", "Content-Type", "X-Requested-With", "Accept"
+            "Authorization", "Content-Type", "X-Requested-With", "Accept", "Origin", 
+            "Access-Control-Request-Method", "Access-Control-Request-Headers"
         ));
-        configuration.setExposedHeaders(Collections.singletonList("Authorization"));
+        configuration.setExposedHeaders(Arrays.asList("Authorization", "Content-Type"));
+        configuration.setAllowCredentials(true);
         configuration.setMaxAge(3600L);
         
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();

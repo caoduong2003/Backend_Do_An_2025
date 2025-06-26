@@ -36,13 +36,35 @@ public class UserManagementController {
             @RequestParam(defaultValue = "ngayTao") String sortBy,
             @RequestParam(defaultValue = "desc") String sortDir,
             @RequestParam(required = false) Integer vaiTro,
+            @RequestParam(required = false) String keyword,
+            @RequestParam(defaultValue = "false") Boolean includeDeleted) {
+        
+        Sort sort = sortDir.equalsIgnoreCase("desc") ? 
+            Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
+        Pageable pageable = PageRequest.of(page, size, sort);
+        
+        Page<UserDto.UserResponse> users = userManagementService.getAllUsers(pageable, vaiTro, keyword, includeDeleted);
+        return ResponseEntity.ok(users);
+    }
+
+    /**
+     * Lấy danh sách tất cả người dùng (bao gồm đã xóa)
+     */
+    @GetMapping("/all")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Page<UserDto.UserResponse>> getAllUsersIncludingDeleted(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "ngayTao") String sortBy,
+            @RequestParam(defaultValue = "desc") String sortDir,
+            @RequestParam(required = false) Integer vaiTro,
             @RequestParam(required = false) String keyword) {
         
         Sort sort = sortDir.equalsIgnoreCase("desc") ? 
             Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
         Pageable pageable = PageRequest.of(page, size, sort);
         
-        Page<UserDto.UserResponse> users = userManagementService.getAllUsers(pageable, vaiTro, keyword);
+        Page<UserDto.UserResponse> users = userManagementService.getAllUsers(pageable, vaiTro, keyword, true);
         return ResponseEntity.ok(users);
     }
 
@@ -125,14 +147,25 @@ public class UserManagementController {
     }
 
     /**
+     * Khôi phục người dùng đã xóa
+     */
+    @PutMapping("/{id}/restore")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<UserDto.UserResponse> restoreUser(@PathVariable Long id) {
+        log.info("Admin khôi phục người dùng ID: {}", id);
+        UserDto.UserResponse restoredUser = userManagementService.restoreUser(id);
+        return ResponseEntity.ok(restoredUser);
+    }
+
+    /**
      * Xóa người dùng (soft delete)
      */
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<String> deleteUser(@PathVariable Long id) {
+    public ResponseEntity<UserDto.UserResponse> deleteUser(@PathVariable Long id) {
         log.info("Admin xóa người dùng ID: {}", id);
-        userManagementService.deleteUser(id);
-        return ResponseEntity.ok("Đã xóa người dùng thành công");
+        UserDto.UserResponse deletedUser = userManagementService.deleteUser(id);
+        return ResponseEntity.ok(deletedUser);
     }
 
     /**

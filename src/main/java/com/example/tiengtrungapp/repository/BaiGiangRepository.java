@@ -41,4 +41,7 @@ public interface BaiGiangRepository extends JpaRepository<BaiGiang, Long> {
 
     // Tìm bài giảng theo giảng viên và trạng thái
     List<BaiGiang> findByGiangVienIDAndTrangThai(Long giangVienID, Boolean trangThai);
+
+    @Query("SELECT b FROM BaiGiang b WHERE b.capDoHSK.capDo = :level")
+    List<BaiGiang> findByCapDoHSKLevel(@Param("level") String level);
 }

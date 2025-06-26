@@ -30,8 +30,14 @@ public class UserManagementService {
     /**
      * Lấy danh sách tất cả người dùng với phân trang và lọc
      */
-    public Page<UserDto.UserResponse> getAllUsers(Pageable pageable, Integer vaiTro, String keyword) {
+    public Page<UserDto.UserResponse> getAllUsers(Pageable pageable, Integer vaiTro, String keyword, Boolean includeDeleted) {
         Specification<NguoiDung> spec = Specification.where(null);
+
+        // Chỉ hiển thị người dùng đang hoạt động nếu không yêu cầu bao gồm đã xóa
+        if (includeDeleted == null || !includeDeleted) {
+            spec = spec.and((root, query, criteriaBuilder) -> 
+                criteriaBuilder.equal(root.get("trangThai"), true));
+        }
 
         // Lọc theo vai trò
         if (vaiTro != null) {
@@ -202,19 +208,39 @@ public class UserManagementService {
     }
 
     /**
+     * Khôi phục người dùng đã xóa
+     */
+    @Transactional
+    public UserDto.UserResponse restoreUser(Long id) {
+        NguoiDung user = nguoiDungRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng với ID: " + id));
+
+        // Khôi phục trạng thái
+        user.setTrangThai(true);
+        user.setNgayCapNhat(LocalDateTime.now());
+        NguoiDung restoredUser = nguoiDungRepository.save(user);
+        
+        log.info("Đã khôi phục người dùng ID: {}", id);
+        
+        return convertToUserResponse(restoredUser);
+    }
+
+    /**
      * Xóa người dùng (soft delete)
      */
     @Transactional
-    public void deleteUser(Long id) {
+    public UserDto.UserResponse deleteUser(Long id) {
         NguoiDung user = nguoiDungRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng với ID: " + id));
 
         // Soft delete - chỉ thay đổi trạng thái
         user.setTrangThai(false);
         user.setNgayCapNhat(LocalDateTime.now());
-        nguoiDungRepository.save(user);
+        NguoiDung deletedUser = nguoiDungRepository.save(user);
         
         log.info("Đã xóa (vô hiệu hóa) người dùng ID: {}", id);
+        
+        return convertToUserResponse(deletedUser);
     }
 
     /**

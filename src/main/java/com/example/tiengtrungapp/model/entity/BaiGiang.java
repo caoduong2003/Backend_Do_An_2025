@@ -53,7 +53,7 @@ public class BaiGiang {
     @JoinColumn(name = "ChuDeID", nullable = false)
     private ChuDe chuDe;
     
-    @Column(name = "LuotXem", nullable = false)
+    @Column(name = "LuotXem")
     private Integer luotXem;
     
     @Column(name = "ThoiLuong")

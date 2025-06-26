@@ -1,3 +1,5 @@
+// JwtFilter.java - SỬA ĐỂ BYPASS PUBLIC ENDPOINTS
+
 package com.example.tiengtrungapp.security;
 
 import com.example.tiengtrungapp.model.entity.NguoiDung;
@@ -28,15 +30,43 @@ public class JwtFilter extends OncePerRequestFilter {
     @Autowired
     private NguoiDungRepository nguoiDungRepository;
 
+    // QUAN TRỌNG: Danh sách các endpoint public cần bypass
+    private static final List<String> PUBLIC_ENDPOINTS = List.of(
+        "/api/auth/",
+        "/api/files/",
+        "/api/baigiang/",
+        "/api/tuvung/",
+        "/api/translation/",
+        "/api/chude/",
+        "/api/capdohsk/",
+        "/api/loaibaigiang/",
+        "/api/tien-trinh/",
+        "/api/media/",
+        "/api/profile/"
+    );
+
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
+
+        String requestURI = request.getRequestURI();
+        String method = request.getMethod();
+        
+        // QUAN TRỌNG: Bypass JWT filter cho public endpoints
+        if (isPublicEndpoint(requestURI)) {
+            logger.info("✅ BYPASSING JWT filter for public endpoint: " + method + " " + requestURI);
+            filterChain.doFilter(request, response);
+            return;
+        }
+
+        logger.info("🔒 Processing JWT for endpoint: " + method + " " + requestURI);
 
         try {
             String jwt = parseJwt(request);
 
             if (jwt != null && jwtUtils.validateToken(jwt)) {
                 String username = jwtUtils.getUsernameFromToken(jwt);
+                logger.info("✅ Valid JWT found for user: " + username);
 
                 // Lấy thông tin người dùng từ database
                 NguoiDung user = nguoiDungRepository.findByTenDangNhap(username).orElse(null);
@@ -51,13 +81,33 @@ public class JwtFilter extends OncePerRequestFilter {
 
                     authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                     SecurityContextHolder.getContext().setAuthentication(authentication);
+                    logger.info("✅ Authentication set for user: " + username + " with authorities: " + authorities);
+                } else {
+                    logger.warn("❌ User not found or inactive: " + username);
                 }
+            } else {
+                logger.warn("❌ No valid JWT found for endpoint: " + method + " " + requestURI);
             }
         } catch (Exception e) {
-            logger.error("Không thể xác thực: {}", e);
+            logger.error("❌ Error during JWT authentication: " + e.getMessage());
         }
 
         filterChain.doFilter(request, response);
+    }
+
+    /**
+     * Kiểm tra xem endpoint có phải là public không
+     */
+    private boolean isPublicEndpoint(String requestURI) {
+        boolean isPublic = PUBLIC_ENDPOINTS.stream()
+                .anyMatch(endpoint -> requestURI.startsWith(endpoint));
+        
+        if (!isPublic) {
+            logger.warn("🔍 Endpoint NOT in public list: " + requestURI);
+            logger.warn("🔍 Available public endpoints: " + PUBLIC_ENDPOINTS);
+        }
+        
+        return isPublic;
     }
 
     private String parseJwt(HttpServletRequest request) {

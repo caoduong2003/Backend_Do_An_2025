@@ -2,6 +2,8 @@ package com.example.tiengtrungapp.controller;
 
 import com.example.tiengtrungapp.model.entity.BaiGiang;
 import com.example.tiengtrungapp.repository.BaiGiangRepository;
+import com.example.tiengtrungapp.service.VideoStorageService;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -19,6 +21,9 @@ public class BaiGiangController {
     @Autowired
     private BaiGiangRepository baiGiangRepository;
 
+    @Autowired
+    private VideoStorageService videoStorageService;
+
     @GetMapping
     public ResponseEntity<List<BaiGiang>> getAllBaiGiang(
             @RequestParam(required = false) Long giangVienId,
@@ -26,9 +31,9 @@ public class BaiGiangController {
             @RequestParam(required = false) Integer capDoHSK_ID,
             @RequestParam(required = false) Integer chuDeId,
             @RequestParam(required = false) Boolean published) {
-        
+
         List<BaiGiang> baiGiangs;
-        
+
         if (giangVienId != null) {
             baiGiangs = baiGiangRepository.findByGiangVienID(giangVienId);
         } else if (loaiBaiGiangId != null) {
@@ -42,10 +47,10 @@ public class BaiGiangController {
         } else {
             baiGiangs = baiGiangRepository.findAll();
         }
-        
+
         return ResponseEntity.ok(baiGiangs);
     }
-    
+
     @GetMapping("/{id}")
     public ResponseEntity<BaiGiang> getBaiGiangById(@PathVariable Long id) {
         Optional<BaiGiang> baiGiang = baiGiangRepository.findById(id);
@@ -54,13 +59,13 @@ public class BaiGiangController {
             BaiGiang baiGiangData = baiGiang.get();
             baiGiangData.setLuotXem(baiGiangData.getLuotXem() + 1);
             baiGiangRepository.save(baiGiangData);
-            
+
             return ResponseEntity.ok(baiGiangData);
         } else {
             return ResponseEntity.notFound().build();
         }
     }
-    
+
     @PostMapping
     public ResponseEntity<BaiGiang> createBaiGiang(@RequestBody BaiGiang baiGiang) {
         try {
@@ -72,11 +77,11 @@ public class BaiGiangController {
             return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
-    
+
     @PutMapping("/{id}")
     public ResponseEntity<BaiGiang> updateBaiGiang(@PathVariable Long id, @RequestBody BaiGiang baiGiang) {
         Optional<BaiGiang> baiGiangData = baiGiangRepository.findById(id);
-        
+
         if (baiGiangData.isPresent()) {
             BaiGiang updatedBaiGiang = baiGiangData.get();
             updatedBaiGiang.setTieuDe(baiGiang.getTieuDe());
@@ -92,13 +97,13 @@ public class BaiGiangController {
             updatedBaiGiang.setAudioURL(baiGiang.getAudioURL());
             updatedBaiGiang.setTrangThai(baiGiang.getTrangThai());
             updatedBaiGiang.setLaBaiGiangGoi(baiGiang.getLaBaiGiangGoi());
-            
+
             return new ResponseEntity<>(baiGiangRepository.save(updatedBaiGiang), HttpStatus.OK);
         } else {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
     }
-    
+
     @DeleteMapping("/{id}")
     public ResponseEntity<HttpStatus> deleteBaiGiang(@PathVariable Long id) {
         try {
@@ -108,10 +113,16 @@ public class BaiGiangController {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
-    
+
     @GetMapping("/search")
     public ResponseEntity<List<BaiGiang>> searchBaiGiang(@RequestParam String keyword) {
         List<BaiGiang> baiGiangs = baiGiangRepository.search(keyword);
+        return ResponseEntity.ok(baiGiangs);
+    }
+
+    @GetMapping("/level/{level}")
+    public ResponseEntity<List<BaiGiang>> getBaiGiangByLevel(@PathVariable String level) {
+        List<BaiGiang> baiGiangs = baiGiangRepository.findByCapDoHSKLevel(level);
         return ResponseEntity.ok(baiGiangs);
     }
 }
