@@ -90,6 +90,44 @@ public class VideoController {
     /**
      * Stream video file with range support
      */
+    // @GetMapping("/video/{fileName:.+}")
+    // public ResponseEntity<Resource> streamVideo(
+    // @PathVariable String fileName,
+    // @RequestHeader(value = "Range", required = false) String rangeHeader,
+    // HttpServletRequest request) {
+
+    // try {
+    // Resource videoResource = videoStorageService.loadVideoAsResource(fileName);
+
+    // if (!videoResource.exists()) {
+    // return ResponseEntity.notFound().build();
+    // }
+
+    // // Get video info
+    // VideoStorageService.VideoInfo videoInfo =
+    // videoStorageService.getVideoInfo(fileName);
+    // String contentType = videoInfo != null ? videoInfo.getContentType() :
+    // "video/mp4";
+
+    // long contentLength = videoResource.contentLength();
+
+    // // Handle range requests for video streaming
+    // if (rangeHeader != null && rangeHeader.startsWith("bytes=")) {
+    // return handleRangeRequest(videoResource, rangeHeader, contentType,
+    // contentLength);
+    // } else {
+    // // Full content response
+    // return ResponseEntity.ok()
+    // .contentType(MediaType.parseMediaType(contentType))
+    // .contentLength(contentLength)
+    // .body(videoResource);
+    // }
+
+    // } catch (Exception ex) {
+    // log.error("Error streaming video {}: {}", fileName, ex.getMessage());
+    // return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+    // }
+    // }
     @GetMapping("/video/{fileName:.+}")
     public ResponseEntity<Resource> streamVideo(
             @PathVariable String fileName,
@@ -97,29 +135,24 @@ public class VideoController {
             HttpServletRequest request) {
 
         try {
+            log.info("🎬 Simple video request: {}", fileName);
+
             Resource videoResource = videoStorageService.loadVideoAsResource(fileName);
 
             if (!videoResource.exists()) {
                 return ResponseEntity.notFound().build();
             }
 
-            // Get video info
             VideoStorageService.VideoInfo videoInfo = videoStorageService.getVideoInfo(fileName);
             String contentType = videoInfo != null ? videoInfo.getContentType() : "video/mp4";
 
-            long contentLength = videoResource.contentLength();
-
-            // Handle range requests for video streaming
-            if (rangeHeader != null && rangeHeader.startsWith("bytes=")) {
-                return handleRangeRequest(videoResource, rangeHeader, contentType, contentLength);
-            } else {
-                // Full content response
-                return ResponseEntity.ok()
-                        .contentType(MediaType.parseMediaType(contentType))
-                        .contentLength(contentLength)
-                        .header(HttpHeaders.ACCEPT_RANGES, "bytes")
-                        .body(videoResource);
-            }
+            // ✅ SIMPLE: Always return full video
+            return ResponseEntity.ok()
+                    .contentType(MediaType.parseMediaType(contentType))
+                    .contentLength(videoResource.contentLength())
+                    .header(HttpHeaders.CACHE_CONTROL, "public, max-age=3600")
+                    // NO Accept-Ranges header!
+                    .body(videoResource);
 
         } catch (Exception ex) {
             log.error("Error streaming video {}: {}", fileName, ex.getMessage());
@@ -130,32 +163,35 @@ public class VideoController {
     /**
      * Serve image file
      */
-    @GetMapping("/image/{fileName:.+}")
-    public ResponseEntity<Resource> getImage(@PathVariable String fileName, HttpServletRequest request) {
-        try {
-            Resource resource = videoStorageService.loadImageAsResource(fileName);
+    // @GetMapping("/image/{fileName:.+}")
+    // public ResponseEntity<Resource> getImage(@PathVariable String fileName,
+    // HttpServletRequest request) {
+    // try {
+    // Resource resource = videoStorageService.loadImageAsResource(fileName);
 
-            String contentType = null;
-            try {
-                contentType = request.getServletContext().getMimeType(resource.getFile().getAbsolutePath());
-            } catch (IOException ex) {
-                log.info("Could not determine file type for: {}", fileName);
-            }
+    // String contentType = null;
+    // try {
+    // contentType =
+    // request.getServletContext().getMimeType(resource.getFile().getAbsolutePath());
+    // } catch (IOException ex) {
+    // log.info("Could not determine file type for: {}", fileName);
+    // }
 
-            if (contentType == null) {
-                contentType = "application/octet-stream";
-            }
+    // if (contentType == null) {
+    // contentType = "application/octet-stream";
+    // }
 
-            return ResponseEntity.ok()
-                    .contentType(MediaType.parseMediaType(contentType))
-                    .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + resource.getFilename() + "\"")
-                    .body(resource);
+    // return ResponseEntity.ok()
+    // .contentType(MediaType.parseMediaType(contentType))
+    // .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" +
+    // resource.getFilename() + "\"")
+    // .body(resource);
 
-        } catch (Exception ex) {
-            log.error("Error serving image {}: {}", fileName, ex.getMessage());
-            return ResponseEntity.notFound().build();
-        }
-    }
+    // } catch (Exception ex) {
+    // log.error("Error serving image {}: {}", fileName, ex.getMessage());
+    // return ResponseEntity.notFound().build();
+    // }
+    // }
 
     /**
      * Get video information
@@ -223,7 +259,6 @@ public class VideoController {
 
             return ResponseEntity.status(HttpStatus.PARTIAL_CONTENT)
                     .header(HttpHeaders.CONTENT_RANGE, "bytes " + start + "-" + end + "/" + contentLength)
-                    .header(HttpHeaders.ACCEPT_RANGES, "bytes")
                     .header(HttpHeaders.CONTENT_LENGTH, String.valueOf(rangeLength))
                     .contentType(MediaType.parseMediaType(contentType))
                     .body(resource);

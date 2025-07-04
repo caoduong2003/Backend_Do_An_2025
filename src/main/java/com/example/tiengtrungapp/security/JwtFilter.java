@@ -32,18 +32,17 @@ public class JwtFilter extends OncePerRequestFilter {
 
     // QUAN TRỌNG: Danh sách các endpoint public cần bypass
     private static final List<String> PUBLIC_ENDPOINTS = List.of(
-        "/api/auth/",
-        "/api/files/",
-        "/api/baigiang/",
-        "/api/tuvung/",
-        "/api/translation/",
-        "/api/chude/",
-        "/api/capdohsk/",
-        "/api/loaibaigiang/",
-        "/api/tien-trinh/",
-        "/api/media/",
-        "/api/profile/"
-    );
+            "/api/auth/",
+            "/api/files/",
+            "/api/baigiang/",
+            "/api/tuvung/",
+            "/api/translation/",
+            "/api/chude/",
+            "/api/capdohsk/",
+            "/api/loaibaigiang/",
+            "/api/tien-trinh/",
+            "/api/media/",
+            "/api/profile/");
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
@@ -51,7 +50,7 @@ public class JwtFilter extends OncePerRequestFilter {
 
         String requestURI = request.getRequestURI();
         String method = request.getMethod();
-        
+
         // QUAN TRỌNG: Bypass JWT filter cho public endpoints
         if (isPublicEndpoint(requestURI)) {
             logger.info("✅ BYPASSING JWT filter for public endpoint: " + method + " " + requestURI);
@@ -70,14 +69,14 @@ public class JwtFilter extends OncePerRequestFilter {
 
                 // Lấy thông tin người dùng từ database
                 NguoiDung user = nguoiDungRepository.findByTenDangNhap(username).orElse(null);
-                
+
                 if (user != null && user.getTrangThai()) { // Kiểm tra trạng thái hoạt động
                     // Tạo authorities dựa trên vai trò
                     List<SimpleGrantedAuthority> authorities = getAuthorities(user.getVaiTro());
 
                     // Tạo authentication object
-                    UsernamePasswordAuthenticationToken authentication = 
-                        new UsernamePasswordAuthenticationToken(username, null, authorities);
+                    UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
+                            username, null, authorities);
 
                     authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                     SecurityContextHolder.getContext().setAuthentication(authentication);
@@ -101,12 +100,12 @@ public class JwtFilter extends OncePerRequestFilter {
     private boolean isPublicEndpoint(String requestURI) {
         boolean isPublic = PUBLIC_ENDPOINTS.stream()
                 .anyMatch(endpoint -> requestURI.startsWith(endpoint));
-        
+
         if (!isPublic) {
             logger.warn("🔍 Endpoint NOT in public list: " + requestURI);
             logger.warn("🔍 Available public endpoints: " + PUBLIC_ENDPOINTS);
         }
-        
+
         return isPublic;
     }
 
