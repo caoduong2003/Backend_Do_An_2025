@@ -50,11 +50,11 @@ public class ProfileController {
             @Valid @RequestBody UserDto.ChangePasswordRequest request) {
         String username = authentication.getName();
         log.info("Người dùng {} thay đổi mật khẩu", username);
-        
+
         if (!request.getMatKhauMoi().equals(request.getXacNhanMatKhau())) {
             return ResponseEntity.badRequest().body("Mật khẩu mới và xác nhận mật khẩu không khớp");
         }
-        
+
         profileService.changePassword(username, request);
         return ResponseEntity.ok("Đã thay đổi mật khẩu thành công");
     }

@@ -12,65 +12,128 @@ import java.util.List;
 @Repository
 public interface BaiGiangRepository extends JpaRepository<BaiGiang, Long> {
 
-    // Existing methods - GIỮ NGUYÊN
-    List<BaiGiang> findByGiangVienID(Long giangVienId);
+        // ===== EXISTING METHODS - KEEP AS IS =====
+        List<BaiGiang> findByGiangVienID(Long giangVienId);
 
-    List<BaiGiang> findByLoaiBaiGiangId(Integer loaiBaiGiangId);
+        // ===== SỬA LỖI: Sử dụng relationship objects =====
 
-    List<BaiGiang> findByCapDoHSKId(Integer capDoHSKId);
+        /**
+         * Tìm theo loại bài giảng
+         */
+        @Query("SELECT b FROM BaiGiang b WHERE b.loaiBaiGiang.id = :loaiBaiGiangId")
+        List<BaiGiang> findByLoaiBaiGiangId(@Param("loaiBaiGiangId") Integer loaiBaiGiangId);
 
-    List<BaiGiang> findByChuDeId(Integer chuDeId);
+        /**
+         * Tìm theo cấp độ HSK
+         */
+        @Query("SELECT b FROM BaiGiang b WHERE b.capDoHSK.id = :capDoHSKId")
+        List<BaiGiang> findByCapDoHSKId(@Param("capDoHSKId") Integer capDoHSKId);
 
-    // 🚀 MISSING: Methods cho BaiGiangController
-    @Query("SELECT b FROM BaiGiang b WHERE " +
-            "LOWER(b.tieuDe) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
-            "LOWER(b.moTa) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
-            "LOWER(b.noiDung) LIKE LOWER(CONCAT('%', :keyword, '%'))")
-    List<BaiGiang> search(@Param("keyword") String keyword);
+        /**
+         * Tìm theo chủ đề
+         */
+        @Query("SELECT b FROM BaiGiang b WHERE b.chuDe.id = :chuDeId")
+        List<BaiGiang> findByChuDeId(@Param("chuDeId") Integer chuDeId);
 
-    @Query("SELECT b FROM BaiGiang b WHERE b.capDoHSK_ID = :level")
-    List<BaiGiang> findByCapDoHSKLevel(@Param("level") String level);
+        // ===== METHODS CHO GUEST CONTROLLER =====
 
-    // 🚀 FIXED: Sử dụng TrangThai thay vì published
-    @Query("SELECT b FROM BaiGiang b WHERE b.trangThai = true ORDER BY b.ngayTao DESC")
-    List<BaiGiang> findAllPublished();
+        /**
+         * Tìm tất cả bài giảng đã publish
+         */
+        @Query("SELECT b FROM BaiGiang b WHERE b.trangThai = true ORDER BY b.ngayTao DESC")
+        List<BaiGiang> findAllPublished();
 
-    /**
-     * Lấy bài giảng đã active với pagination
-     */
-    @Query("SELECT b FROM BaiGiang b WHERE b.trangThai = true ORDER BY b.ngayTao DESC")
-    List<BaiGiang> findAllPublished(Pageable pageable);
+        /**
+         * Tìm tất cả bài giảng đã publish với phân trang
+         */
+        @Query("SELECT b FROM BaiGiang b WHERE b.trangThai = true ORDER BY b.ngayTao DESC")
+        List<BaiGiang> findAllPublished(Pageable pageable);
 
-    /**
-     * Lấy bài giảng theo cấp độ HSK với pagination
-     */
-    @Query("SELECT b FROM BaiGiang b WHERE b.capDoHSK_ID = :capDoHSKId AND b.trangThai = true ORDER BY b.ngayTao DESC")
-    List<BaiGiang> findByCapDoHSKId(@Param("capDoHSKId") Integer capDoHSKId, Pageable pageable);
+        /**
+         * Tìm theo cấp độ HSK với phân trang
+         */
+        @Query("SELECT b FROM BaiGiang b WHERE b.capDoHSK.id = :capDoHSKId AND b.trangThai = true ORDER BY b.ngayTao DESC")
+        List<BaiGiang> findByCapDoHSKId(@Param("capDoHSKId") Integer capDoHSKId, Pageable pageable);
 
-    /**
-     * Lấy bài giảng theo chủ đề với pagination
-     */
-    @Query("SELECT b FROM BaiGiang b WHERE b.chuDeId = :chuDeId AND b.trangThai = true ORDER BY b.ngayTao DESC")
-    List<BaiGiang> findByChuDeId(@Param("chuDeId") Integer chuDeId, Pageable pageable);
+        /**
+         * Tìm theo chủ đề với phân trang
+         */
+        @Query("SELECT b FROM BaiGiang b WHERE b.chuDe.id = :chuDeId AND b.trangThai = true ORDER BY b.ngayTao DESC")
+        List<BaiGiang> findByChuDeId(@Param("chuDeId") Integer chuDeId, Pageable pageable);
 
-    /**
-     * Lấy bài giảng phổ biến nhất (guest mode)
-     */
-    @Query("SELECT b FROM BaiGiang b WHERE b.trangThai = true ORDER BY b.luotXem DESC, b.ngayTao DESC")
-    List<BaiGiang> findTopPublishedLessons(Pageable pageable);
+        /**
+         * Tìm bài giảng phổ biến nhất (guest mode)
+         */
+        @Query("SELECT b FROM BaiGiang b WHERE b.trangThai = true ORDER BY b.luotXem DESC, b.ngayTao DESC")
+        List<BaiGiang> findTopPublishedLessons(Pageable pageable);
 
-    /**
-     * Đếm số bài giảng đã active
-     */
-    @Query("SELECT COUNT(b) FROM BaiGiang b WHERE b.trangThai = true")
-    Long countPublished();
+        // ===== METHODS CHO PROFILE SERVICE =====
 
-    /**
-     * Tìm kiếm bài giảng cho guest
-     */
-    @Query("SELECT b FROM BaiGiang b WHERE b.trangThai = true AND " +
-            "(LOWER(b.tieuDe) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
-            "LOWER(b.moTa) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
-            "ORDER BY b.ngayTao DESC")
-    List<BaiGiang> searchForGuest(@Param("keyword") String keyword, Pageable pageable);
+        /**
+         * Đếm số bài giảng theo giảng viên - TRẢ VỀ INTEGER CHO UI
+         */
+        @Query("SELECT CAST(COUNT(b) AS int) FROM BaiGiang b WHERE b.giangVienID = :giangVienId")
+        Integer countByGiangVienID(@Param("giangVienId") Long giangVienId);
+
+        /**
+         * Đếm số bài giảng theo giảng viên và trạng thái
+         */
+        @Query("SELECT CAST(COUNT(b) AS int) FROM BaiGiang b WHERE b.giangVienID = :giangVienId AND b.trangThai = :trangThai")
+        Integer countByGiangVienIDAndTrangThai(@Param("giangVienId") Long giangVienId,
+                        @Param("trangThai") Boolean trangThai);
+
+        /**
+         * Đếm số bài giảng theo trạng thái - CHO TIEN TRINH SERVICE
+         */
+        @Query("SELECT COUNT(b) FROM BaiGiang b WHERE b.trangThai = :trangThai")
+        Long countByTrangThai(@Param("trangThai") Boolean trangThai);
+
+        // ===== UTILITY METHODS =====
+
+        /**
+         * Tìm theo trạng thái
+         */
+        List<BaiGiang> findByTrangThai(Boolean trangThai);
+
+        /**
+         * Tìm theo tiêu đề
+         */
+        List<BaiGiang> findByTieuDeContainingIgnoreCase(String tieuDe);
+
+        /**
+         * Tìm bài giảng theo giảng viên và trạng thái
+         */
+        @Query("SELECT b FROM BaiGiang b WHERE b.giangVienID = :giangVienId AND b.trangThai = :trangThai")
+        List<BaiGiang> findByGiangVienIDAndTrangThai(@Param("giangVienId") Long giangVienId,
+                        @Param("trangThai") Boolean trangThai);
+
+        /**
+         * Đếm số bài giảng đã publish
+         */
+        @Query("SELECT COUNT(b) FROM BaiGiang b WHERE b.trangThai = true")
+        Long countPublished();
+
+        /**
+         * Tìm kiếm bài giảng
+         */
+        @Query("SELECT b FROM BaiGiang b WHERE " +
+                        "LOWER(b.tieuDe) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+                        "LOWER(b.moTa) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+                        "LOWER(b.noiDung) LIKE LOWER(CONCAT('%', :keyword, '%'))")
+        List<BaiGiang> search(@Param("keyword") String keyword);
+
+        /**
+         * Tìm theo cấp độ HSK (string) - CHO BAIGIANG CONTROLLER
+         */
+        @Query("SELECT b FROM BaiGiang b WHERE b.capDoHSK.capDo = :level")
+        List<BaiGiang> findByCapDoHSKLevel(@Param("level") String level);
+
+        /**
+         * Tìm kiếm bài giảng cho guest
+         */
+        @Query("SELECT b FROM BaiGiang b WHERE b.trangThai = true AND " +
+                        "(LOWER(b.tieuDe) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+                        "LOWER(b.moTa) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
+                        "ORDER BY b.ngayTao DESC")
+        List<BaiGiang> searchForGuest(@Param("keyword") String keyword, Pageable pageable);
 }
