@@ -44,7 +44,8 @@ public class TienTrinhService {
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy bài giảng với ID: " + request.getBaiGiangId()));
 
         // Kiểm tra tiến trình đã tồn tại
-        Optional<TienTrinh> existingTienTrinh = tienTrinhRepository.findByHocVienIdAndBaiGiangId(hocVienId, request.getBaiGiangId());
+        Optional<TienTrinh> existingTienTrinh = tienTrinhRepository.findByHocVienIdAndBaiGiangId(hocVienId,
+                request.getBaiGiangId());
         if (existingTienTrinh.isPresent()) {
             throw new RuntimeException("Tiến trình học tập đã tồn tại cho bài giảng này");
         }
@@ -68,7 +69,8 @@ public class TienTrinhService {
         }
 
         TienTrinh savedTienTrinh = tienTrinhRepository.save(tienTrinh);
-        log.info("Đã tạo tiến trình học tập cho học viên ID: {} và bài giảng ID: {}", hocVienId, request.getBaiGiangId());
+        log.info("Đã tạo tiến trình học tập cho học viên ID: {} và bài giảng ID: {}", hocVienId,
+                request.getBaiGiangId());
 
         return convertToTienTrinhResponse(savedTienTrinh);
     }
@@ -77,7 +79,8 @@ public class TienTrinhService {
      * Cập nhật tiến trình học tập
      */
     @Transactional
-    public TienTrinhDto.TienTrinhResponse updateTienTrinh(Long hocVienId, Long tienTrinhId, TienTrinhDto.UpdateTienTrinhRequest request) {
+    public TienTrinhDto.TienTrinhResponse updateTienTrinh(Long hocVienId, Long tienTrinhId,
+            TienTrinhDto.UpdateTienTrinhRequest request) {
         TienTrinh tienTrinh = tienTrinhRepository.findById(tienTrinhId)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy tiến trình với ID: " + tienTrinhId));
 
@@ -89,7 +92,7 @@ public class TienTrinhService {
         // Cập nhật thông tin
         if (request.getTrangThai() != null) {
             tienTrinh.setTrangThai(request.getTrangThai());
-            
+
             // Nếu chuyển sang trạng thái hoàn thành
             if (request.getTrangThai() == 2 && tienTrinh.getNgayHoanThanh() == null) {
                 tienTrinh.setNgayHoanThanh(LocalDateTime.now());
@@ -139,45 +142,44 @@ public class TienTrinhService {
     /**
      * Lấy danh sách tiến trình học tập của học viên
      */
-    public Page<TienTrinhDto.TienTrinhResponse> getTienTrinhByHocVienId(Long hocVienId, Pageable pageable, TienTrinhDto.TienTrinhFilter filter) {
-        Specification<TienTrinh> spec = Specification.where((root, query, criteriaBuilder) -> 
-            criteriaBuilder.equal(root.get("hocVien").get("id"), hocVienId));
+    public Page<TienTrinhDto.TienTrinhResponse> getTienTrinhByHocVienId(Long hocVienId, Pageable pageable,
+            TienTrinhDto.TienTrinhFilter filter) {
+        Specification<TienTrinh> spec = Specification.where(
+                (root, query, criteriaBuilder) -> criteriaBuilder.equal(root.get("hocVien").get("id"), hocVienId));
 
         // Áp dụng các filter
         if (filter != null) {
             if (filter.getTrangThai() != null) {
-                spec = spec.and((root, query, criteriaBuilder) -> 
-                    criteriaBuilder.equal(root.get("trangThai"), filter.getTrangThai()));
+                spec = spec.and((root, query, criteriaBuilder) -> criteriaBuilder.equal(root.get("trangThai"),
+                        filter.getTrangThai()));
             }
 
             if (filter.getCapDoHSKId() != null) {
-                spec = spec.and((root, query, criteriaBuilder) -> 
-                    criteriaBuilder.equal(root.get("baiGiang").get("capDoHSK").get("id"), filter.getCapDoHSKId()));
+                spec = spec.and((root, query, criteriaBuilder) -> criteriaBuilder
+                        .equal(root.get("baiGiang").get("capDoHSK").get("id"), filter.getCapDoHSKId()));
             }
 
             if (filter.getChuDeId() != null) {
-                spec = spec.and((root, query, criteriaBuilder) -> 
-                    criteriaBuilder.equal(root.get("baiGiang").get("chuDe").get("id"), filter.getChuDeId()));
+                spec = spec.and((root, query, criteriaBuilder) -> criteriaBuilder
+                        .equal(root.get("baiGiang").get("chuDe").get("id"), filter.getChuDeId()));
             }
 
             if (filter.getLoaiBaiGiangId() != null) {
-                spec = spec.and((root, query, criteriaBuilder) -> 
-                    criteriaBuilder.equal(root.get("baiGiang").get("loaiBaiGiang").get("id"), filter.getLoaiBaiGiangId()));
+                spec = spec.and((root, query, criteriaBuilder) -> criteriaBuilder
+                        .equal(root.get("baiGiang").get("loaiBaiGiang").get("id"), filter.getLoaiBaiGiangId()));
             }
 
             if (filter.getTuNgay() != null && filter.getDenNgay() != null) {
-                spec = spec.and((root, query, criteriaBuilder) -> 
-                    criteriaBuilder.between(root.get("ngayBatDau"), filter.getTuNgay(), filter.getDenNgay()));
+                spec = spec.and((root, query, criteriaBuilder) -> criteriaBuilder.between(root.get("ngayBatDau"),
+                        filter.getTuNgay(), filter.getDenNgay()));
             }
 
             if (filter.getKeyword() != null && !filter.getKeyword().trim().isEmpty()) {
-                spec = spec.and((root, query, criteriaBuilder) -> 
-                    criteriaBuilder.or(
-                        criteriaBuilder.like(criteriaBuilder.lower(root.get("baiGiang").get("tieuDe")), 
-                            "%" + filter.getKeyword().toLowerCase() + "%"),
-                        criteriaBuilder.like(criteriaBuilder.lower(root.get("baiGiang").get("maBaiGiang")), 
-                            "%" + filter.getKeyword().toLowerCase() + "%")
-                    ));
+                spec = spec.and((root, query, criteriaBuilder) -> criteriaBuilder.or(
+                        criteriaBuilder.like(criteriaBuilder.lower(root.get("baiGiang").get("tieuDe")),
+                                "%" + filter.getKeyword().toLowerCase() + "%"),
+                        criteriaBuilder.like(criteriaBuilder.lower(root.get("baiGiang").get("maBaiGiang")),
+                                "%" + filter.getKeyword().toLowerCase() + "%")));
             }
         }
 
@@ -191,34 +193,37 @@ public class TienTrinhService {
     public TienTrinhDto.TienTrinhStatistics getTienTrinhStatistics(Long hocVienId) {
         // Tổng số bài giảng
         long tongSoBaiGiang = baiGiangRepository.countByTrangThai(true);
-        
+
         // Số bài giảng đã học (có tiến trình)
         long soBaiGiangDaHoc = tienTrinhRepository.countByHocVienId(hocVienId);
-        
+
         // Số bài giảng đang học
         long soBaiGiangDangHoc = tienTrinhRepository.countByHocVienIdAndTrangThai(hocVienId, 1);
-        
+
         // Số bài giảng hoàn thành
         long soBaiGiangHoanThanh = tienTrinhRepository.countByHocVienIdAndTrangThai(hocVienId, 2);
-        
+
         // Tiến độ tổng thể
         int tienDoTongThe = tongSoBaiGiang > 0 ? (int) ((soBaiGiangHoanThanh * 100) / tongSoBaiGiang) : 0;
-        
+
         // Tổng thời gian học
         Integer tongThoiGianHoc = tienTrinhRepository.getTotalStudyTimeByHocVienId(hocVienId);
-        
+
         // Điểm trung bình
         Double diemTrungBinh = tienTrinhRepository.getAverageScoreByHocVienId(hocVienId);
-        
+
         // Thống kê theo thời gian
         LocalDateTime todayStart = LocalDate.now().atStartOfDay();
         LocalDateTime weekStart = LocalDate.now().minusDays(7).atStartOfDay();
         LocalDateTime monthStart = LocalDate.now().minusDays(30).atStartOfDay();
-        
-        int soBaiGiangHomNay = tienTrinhRepository.findByHocVienIdAndNgayBatDauBetween(hocVienId, todayStart, LocalDateTime.now()).size();
-        int soBaiGiangTuanNay = tienTrinhRepository.findByHocVienIdAndNgayBatDauBetween(hocVienId, weekStart, LocalDateTime.now()).size();
-        int soBaiGiangThangNay = tienTrinhRepository.findByHocVienIdAndNgayBatDauBetween(hocVienId, monthStart, LocalDateTime.now()).size();
-        
+
+        int soBaiGiangHomNay = tienTrinhRepository
+                .findByHocVienIdAndNgayBatDauBetween(hocVienId, todayStart, LocalDateTime.now()).size();
+        int soBaiGiangTuanNay = tienTrinhRepository
+                .findByHocVienIdAndNgayBatDauBetween(hocVienId, weekStart, LocalDateTime.now()).size();
+        int soBaiGiangThangNay = tienTrinhRepository
+                .findByHocVienIdAndNgayBatDauBetween(hocVienId, monthStart, LocalDateTime.now()).size();
+
         // TODO: Tính số ngày học liên tiếp (cần logic phức tạp hơn)
         int soNgayHocLienTiep = 0;
 
@@ -305,4 +310,4 @@ public class TienTrinhService {
                 .loaiBaiGiangTen(tienTrinh.getBaiGiang().getLoaiBaiGiang().getTenLoai())
                 .build();
     }
-} 
+}
