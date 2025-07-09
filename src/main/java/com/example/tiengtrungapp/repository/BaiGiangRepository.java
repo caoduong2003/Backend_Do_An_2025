@@ -136,4 +136,6 @@ public interface BaiGiangRepository extends JpaRepository<BaiGiang, Long> {
                         "LOWER(b.moTa) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
                         "ORDER BY b.ngayTao DESC")
         List<BaiGiang> searchForGuest(@Param("keyword") String keyword, Pageable pageable);
+
+        
 }

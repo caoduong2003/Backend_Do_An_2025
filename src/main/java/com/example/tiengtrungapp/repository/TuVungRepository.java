@@ -101,4 +101,10 @@ public interface TuVungRepository extends JpaRepository<TuVung, Long> {
          * Tìm theo tiếng Trung (case sensitive)
          */
         List<TuVung> findByTiengTrungContaining(String keyword);
+
+        /**
+         * Đếm tổng số từ vựng - REQUIRED for guest stats
+         */
+        @Query("SELECT COUNT(t) FROM TuVung t")
+        Long countAllVocabulary();
 }
