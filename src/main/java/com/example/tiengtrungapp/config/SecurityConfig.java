@@ -100,7 +100,14 @@ public class SecurityConfig {
                         .requestMatchers("/api/guest/capdohsk/**").permitAll()
                         .requestMatchers("/api/guest/loaibaigiang/**").permitAll()
                         .requestMatchers("/api/guest/stats/**").permitAll()
-
+                        .requestMatchers("/api/teacher-baigiang/**").hasAnyRole("TEACHER", "ADMIN")
+                        .requestMatchers("/api/teacher-tuvung/**").hasAnyRole("TEACHER", "ADMIN")
+                        .requestMatchers("/api/teacher-chude/**").hasAnyRole("TEACHER", "ADMIN")
+                        .requestMatchers("/api/teacher-capdohsk/**").hasAnyRole("TEACHER", "ADMIN")
+                        .requestMatchers("/api/teacher-loaibaigiang/**").hasAnyRole("TEACHER", "ADMIN")
+                        .requestMatchers("/api/teacher-stats/**").hasAnyRole("TEACHER", "ADMIN")
+                        .requestMatchers("/api/teacher-ket-qua-bai-tap/**").hasAnyRole("TEACHER", "ADMIN")
+                        .requestMatchers("/api/teacher-guest/**").hasAnyRole("TEACHER", "ADMIN")
                         // Admin endpoints
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         // Các endpoint khác cần authentication

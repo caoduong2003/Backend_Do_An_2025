@@ -6,11 +6,13 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import java.time.LocalDateTime;
 
 import java.util.List;
 
 @Repository
-public interface BaiGiangRepository extends JpaRepository<BaiGiang, Long> {
+public interface BaiGiangRepository extends JpaRepository<BaiGiang, Long>, JpaSpecificationExecutor<BaiGiang> {
 
         // ===== EXISTING METHODS - KEEP AS IS =====
         List<BaiGiang> findByGiangVienID(Long giangVienId);
@@ -137,5 +139,14 @@ public interface BaiGiangRepository extends JpaRepository<BaiGiang, Long> {
                         "ORDER BY b.ngayTao DESC")
         List<BaiGiang> searchForGuest(@Param("keyword") String keyword, Pageable pageable);
 
-        
+        @Query("SELECT COUNT(b) > 0 FROM BaiGiang b WHERE b.id = :lectureId AND b.giangVienID = :teacherId")
+        boolean existsByIdAndGiangVienID(@Param("lectureId") Long lectureId, @Param("teacherId") Long teacherId);
+
+        @Query("SELECT b FROM BaiGiang b WHERE b.giangVienID = :teacherId " +
+                        "AND b.ngayTao BETWEEN :startDate AND :endDate ORDER BY b.ngayTao DESC")
+        List<BaiGiang> findByTeacherAndDateRange(
+                        @Param("teacherId") Long teacherId,
+                        @Param("startDate") LocalDateTime startDate,
+                        @Param("endDate") LocalDateTime endDate);
+
 }
